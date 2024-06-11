@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Search App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        .error {
+            color: red;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .movie {
+            border-bottom: 1px solid #ccc;
+            padding: 10px 0;
+        }
+        .movie:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Movie Search</h1>
+        <form id="searchForm">
+            <input type="text" id="searchInput" placeholder="Enter movie title" required>
+            <button type="submit">Search</button>
+        </form>
+        <div id="error" class="error"></div>
+        <div id="results"></div>
+        <div id="pagination" class="pagination">
+            <button id="prevBtn" disabled>Previous</button>
+            <button id="nextBtn" disabled>Next</button>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('searchForm');
+            const searchInput = document.getElementById('searchInput');
+            const resultsContainer = document.getElementById('results');
+            const errorContainer = document.getElementById('error');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            let currentPage = 1;
+            let currentSearchTerm = '';
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                currentSearchTerm = searchInput.value.trim();
+                currentPage = 1;
+                await fetchMovies();
+            });
+
+            prevBtn.addEventListener('click', async () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    await fetchMovies();
+                }
+            });
+
+            nextBtn.addEventListener('click', async () => {
+                currentPage++;
+                await fetchMovies();
+            });
+
+            async function fetchMovies() {
+                const apiKey = 'YOUR_API_KEY';
+                const url = `http://www.omdbapi.com/?apikey=${apiKey}&s=${encodeURIComponent(currentSearchTerm)}&page=${currentPage}`;
+                
+                try {
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    if (data.Response === 'False') {
+                        errorContainer.textContent = data.Error;
+                        resultsContainer.innerHTML = '';
+                        prevBtn.disabled = true;
+                        nextBtn.disabled = true;
+                    } else {
+                        errorContainer.textContent = '';
+                        displayResults(data.Search);
+                        prevBtn.disabled = currentPage === 1;
+                        nextBtn.disabled = data.Search.length < 10;
+                    }
+                } catch (error) {
+                    errorContainer.textContent = 'Failed to fetch data. Please try again later.';
+                    resultsContainer.innerHTML = '';
+                }
+            }
+
+            function displayResults(movies) {
+                resultsContainer.innerHTML = movies.map(movie => `
+                    <div class="movie">
+                        <h3>${movie.Title} (${movie.Year})</h3>
+                        <img src="${movie.Poster}" alt="${movie.Title}" />
+                    </div>
+                `).join('');
+            }
+        });
+    </script>
+</body>
+</html>
